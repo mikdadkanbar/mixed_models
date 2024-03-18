@@ -1,0 +1,500 @@
+---
+title: "mlm"
+author: "Esra Turkhan & Vicky"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+
+setwd('/Users/esrakasap/Desktop/Essentials of Mixed and Longitudinal Models/Assignment')
+load("Group_7 2" )
+
+```
+
+
+
+```{r}
+# Her bir Visit için ölçüm sayısını hesapla
+visit_counts <- DF %>%
+  group_by(Visit) %>%
+  summarise(Number_of_Patients = n())
+
+# Sonucu yazdır
+print(visit_counts)
+```
+
+```{r}
+library(dplyr)
+
+
+
+# Her bir Visit için ölçüm sayısını hesapla
+visit_counts <- DF %>%
+  group_by(Visit) %>%
+  summarise(Number_of_Patients = n())
+
+# Visit 0'daki hasta sayısını bul
+visit_0_patients <- filter(visit_counts, Visit == 0)$Number_of_Patients
+
+# Her Visit için hasta yüzdesini hesapla
+visit_counts <- visit_counts %>%
+  mutate(Patient_Percentage = (Number_of_Patients / visit_0_patients) * 100)
+
+# Sonucu yazdır
+print(visit_counts)      
+
+```
+
+```{r}
+library(dplyr)
+
+
+
+# Toplam hasta sayıları ve yüzdeleri
+visit_counts_total <- DF %>%
+  group_by(Visit) %>%
+  summarise(Total_Number_of_Patients = n())
+
+visit_0_patients_total <- filter(visit_counts_total, Visit == 0)$Total_Number_of_Patients
+
+visit_counts_total <- visit_counts_total %>%
+  mutate(Total_Patient_Percentage = (Total_Number_of_Patients / visit_0_patients_total) * 100)
+
+# Period A için hasta sayıları ve yüzdeleri
+visit_counts_A <- DF %>%
+  filter(Period == "A") %>%
+  group_by(Visit) %>%
+  summarise(Number_of_Patients_A = n())
+
+visit_0_patients_A <- filter(visit_counts_A, Visit == 0)$Number_of_Patients_A
+
+visit_counts_A <- visit_counts_A %>%
+  mutate(Patient_Percentage_A = (Number_of_Patients_A / visit_0_patients_A) * 100)
+
+# Period B için hasta sayıları ve yüzdeleri
+visit_counts_B <- DF %>%
+  filter(Period == "B") %>%
+  group_by(Visit) %>%
+  summarise(Number_of_Patients_B = n())
+
+visit_0_patients_B <- filter(visit_counts_B, Visit == 0)$Number_of_Patients_B
+
+visit_counts_B <- visit_counts_B %>%
+  mutate(Patient_Percentage_B = (Number_of_Patients_B / visit_0_patients_B) * 100)
+
+# Total, Period A ve B'yi birleştir
+final_table <- visit_counts_total %>%
+  left_join(visit_counts_A, by = "Visit") %>%
+  left_join(visit_counts_B, by = "Visit") %>%
+  select(Visit, Total_Number_of_Patients, Total_Patient_Percentage, Number_of_Patients_A, Patient_Percentage_A, Number_of_Patients_B, Patient_Percentage_B)
+
+# Sonucu yazdır
+print(final_table)
+
+
+```
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+
+# Cinsiyet dağılımı
+gender_distribution <- DF %>%
+  group_by(sex) %>%
+  summarise(Count = n())
+
+print(gender_distribution)
+
+# Yaş dağılımı (Ortalama, Medyan, Min, Max)
+age_stats <- DF %>%
+  summarise(Mean_Age = mean(Age, na.rm = TRUE),
+            Median_Age = median(Age, na.rm = TRUE),
+            Min_Age = min(Age, na.rm = TRUE),
+            Max_Age = max(Age, na.rm = TRUE))
+
+print(age_stats)
+
+# Yaş dağılımı grafiği
+ggplot(DF, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+  labs(title = "Age Distribution",
+       x = "Age",
+       y = "Frequency")
+
+
+```
+
+```{r}
+sum(is.na(DF))
+
+```
+
+```{r}
+library(dplyr)
+
+# Cinsiyet dağılımını kontrol et
+gender_balance <- DF %>%
+  group_by(sex) %>%
+  summarise(Count = n())
+
+print(gender_balance)
+
+# Tedavi grubu dağılımını kontrol et (eğer varsa)
+treatment_balance <- DF %>%
+  group_by(Period) %>%
+  summarise(Count = n())
+
+print(treatment_balance)
+
+```
+
+```{r}
+# Yaş dağılımını kontrol et
+age_distribution <- DF %>%
+  summarise(Mean_Age = mean(Age, na.rm = TRUE),
+            SD_Age = sd(Age, na.rm = TRUE))
+
+print(age_distribution)
+
+
+```
+
+```{r}
+
+# Gruplara göre gözlem sayılarını kontrol et
+group_balance <- DF %>%
+  group_by(Period) %>%
+  summarise(Count = n())
+
+print(group_balance)
+
+```
+
+```{r}
+library(ggplot2)
+
+# SHS için QQ plot
+qqnorm(DF$SHS)
+qqline(DF$SHS, col = "steelblue")
+
+# Severity için QQ plot
+qqnorm(DF$Severity)
+qqline(DF$Severity, col = "steelblue")
+
+```
+
+```{r}
+# SHS için histogram
+hist(DF$SHS, main = "SHS Distribution", xlab = "SHS", breaks = "Sturges", col = "lightblue")
+
+# Severity için histogram
+hist(DF$Severity, main = "Severity Distribution", xlab = "Severity", breaks = "Sturges", col = "lightblue")
+
+```
+```{r}
+# SHS için Shapiro-Wilk testi
+shapiro.test(DF$SHS)
+
+# Severity için Shapiro-Wilk testi
+shapiro.test(DF$Severity)
+
+```
+
+
+
+
+
+```{r}
+library(ggplot2)
+# Spaghetti plot 
+ggplot(DF, aes(x = Visit, y = SHS, group = id, color = as.factor(id))) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "SHS Change for Each Person",
+       x = "Visit",
+       y = "SHS",
+       color = "ID") +
+  theme(legend.position = "none") 
+
+
+
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# ortalama eğilim çizgisi ile
+
+avg_line <- DF %>%
+  group_by(Visit) %>%
+  summarise(Average_SHS = mean(SHS))
+
+ggplot(DF, aes(x = Visit, y = SHS, group = id)) +
+  geom_line(aes(color = as.factor(id)), alpha = 0.3) + # Kişiye özel çizgiler, saydamlık ile
+  geom_line(data = avg_line, aes(x = Visit, y = Average_SHS, group = 1), color = "blue", size = 1.5) + # Ortalama çizgi
+  theme_minimal() +
+  labs(title = " SHS Ortalama Değişimi",
+       x = "Visit", y = "SHS") +
+  theme(legend.position = "none")
+
+
+
+```
+
+```{r}
+library(ggplot2)
+
+
+
+# Filter Period A Data
+data_A <- subset(DF, Period == "A")
+
+# Period A için spagetti plot oluştur
+ggplot(data_A, aes(x = Visit, y = SHS, group = id, color = as.factor(id))) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "SHS Change for Each Person in Period A",
+       x = "Visit",
+       y = "SHS",
+       color = "ID") +
+  theme(legend.position = "none") 
+
+# Filter Period B Data
+data_B <- subset(DF, Period == "B")
+
+# Period B için spagetti plot oluştur
+ggplot(data_B, aes(x = Visit, y = SHS, group = id, color = as.factor(id))) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "SHS Change for Each Person in Period B",
+       x = "Visit",
+       y = "SHS",
+       color = "ID") +
+  theme(legend.position = "none") # 
+
+
+
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Period A için, ortalama eğilim çizgisi ile
+data_A <- subset(DF, Period == "A")
+avg_line_A <- data_A %>%
+  group_by(Visit) %>%
+  summarise(Average_SHS = mean(SHS))
+
+ggplot(data_A, aes(x = Visit, y = SHS, group = id)) +
+  geom_line(aes(color = as.factor(id)), alpha = 0.3) + # Kişiye özel çizgiler, saydamlık ile
+  geom_line(data = avg_line_A, aes(x = Visit, y = Average_SHS, group = 1), color = "blue", size = 1.5) + # Ortalama çizgi
+  theme_minimal() +
+  labs(title = "Period A için SHS Ortalama Değişimi",
+       x = "Ziyaret", y = "SHS") +
+  theme(legend.position = "none")
+
+
+# Period B için, ortalama eğilim çizgisi ile
+data_B <- subset(DF, Period == "B")
+avg_line_B <- data_B %>%
+  group_by(Visit) %>%
+  summarise(Average_SHS = mean(SHS))
+
+ggplot(data_B, aes(x = Visit, y = SHS, group = id)) +
+  geom_line(aes(color = as.factor(id)), alpha = 0.3) + # Kişiye özel çizgiler, saydamlık ile
+  geom_line(data = avg_line_B, aes(x = Visit, y = Average_SHS, group = 1), color = "blue", size = 1.5) + # Ortalama çizgi
+  theme_minimal() +
+  labs(title = "Period B için SHS Ortalama Değişimi",
+       x = "Ziyaret", y = "SHS") +
+  theme(legend.position = "none")
+
+```
+
+```{r}
+library(ggplot2)
+# Yaş vs SHS relation, colored by sex
+ggplot(DF, aes(x = Age, y = SHS, color = sex)) +
+  geom_point() +
+  labs(title = "Yaş ve SHS Arasındaki İlişki (Cinsiyete Göre)", x = "Yaş", y = "SHS")
+
+```
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+
+# Yaşları belirli aralıklara yuvarla
+DF$Age_Group <- cut(DF$Age,
+                    breaks = seq(40, max(DF$Age) + 5, by = 5),
+                    include.lowest = TRUE,
+                    right = FALSE,
+                    labels = seq(40, max(DF$Age), by = 5))
+
+# Yuvarlanmış yaş değerleri ile SHS ilişkisini göster
+ggplot(DF, aes(x = Age_Group, y = SHS, color = sex)) +
+  geom_point() +
+  labs(title = "Yuvarlanmış Yaş ve SHS Arasındaki İlişki (Cinsiyete Göre)",
+       x = "Yaş Grubu",
+       y = "SHS") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # X eksenindeki etiketleri açılı yap
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+
+# Yaşa ve cinsiyete göre gruplandırılmış SHS ortalamalarını hesapla
+average_SHS_by_age <- DF %>%
+  group_by(Age, sex) %>%
+  summarise(Average_SHS = mean(SHS, na.rm = TRUE)) %>%
+  ungroup()
+
+# Ortalama SHS değerlerini yaş ve cinsiyete göre dağılım grafiğinde göster
+ggplot(average_SHS_by_age, aes(x = Age, y = Average_SHS, color = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = sex), se = FALSE, color = "black") + # Eğilim çizgisi 
+  labs(title = "Yaş Gruplarına Göre Ortalama SHS Değerleri (Cinsiyete Göre)",
+       x = "Yaş",
+       y = "Ortalama SHS") +
+  scale_color_manual(values = c("blue", "pink")) # Renkler: Mavi erkek, pembe kadın
+
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Yaşları belirli aralıklara yuvarla
+DF$Age_Group <- cut(DF$Age,
+                    breaks = seq(40, max(DF$Age) + 5, by = 5),
+                    include.lowest = TRUE,
+                    right = FALSE,
+                    labels = seq(40, max(DF$Age), by = 5))
+
+
+# Yaşa ve cinsiyete göre gruplandırılmış SHS ortalamalarını hesapla
+average_SHS_by_age <- DF %>%
+  group_by(Age_Group, sex) %>%
+  summarise(Average_SHS = mean(SHS, na.rm = TRUE)) %>%
+  ungroup()
+
+# Ortalama SHS değerlerini yaş ve cinsiyete göre dağılım grafiğinde göster
+ggplot(average_SHS_by_age, aes(x = Age_Group, y = Average_SHS, color = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = sex), se = FALSE, color = "black") + # Eğilim çizgisi 
+  labs(title = "Yaş Gruplarına Göre Ortalama SHS Değerleri (Cinsiyete Göre)",
+       x = "Yaş",
+       y = "Ortalama SHS") +
+  scale_color_manual(values = c("blue", "pink")) # Renkler: Mavi erkek, pembe kadın
+
+```
+
+```{r}
+library(ggplot2)
+# Yaş ve SHS arasındaki ilişki, SNP'ye göre fasetlenmiş
+ggplot(DF, aes(x = Age, y = SHS)) +
+  geom_point() +
+  facet_wrap(~ SNP) +
+  labs(title = "Yaş ve SHS Arasındaki İlişki (SNP'ye Göre)", x = "Yaş", y = "SHS")
+
+```
+
+```{r}
+library(ggplot2)
+# Yaşları belirli aralıklara yuvarla
+DF$Age_Group <- cut(DF$Age,
+                    breaks = seq(40, max(DF$Age) + 5, by = 5),
+                    include.lowest = TRUE,
+                    right = FALSE,
+                    labels = seq(40, max(DF$Age), by = 5))
+
+# Yaşa ve cinsiyete göre gruplandırılmış SHS ortalamalarını hesapla
+average_SHS_by_age <- DF %>%
+  group_by(Age_Group, sex,SNP) %>%
+  summarise(Average_SHS = mean(SHS, na.rm = TRUE)) %>%
+  ungroup()
+
+
+# Yaş ve SHS arasındaki ilişki, SNP'ye göre fasetlenmiş
+ggplot(average_SHS_by_age, aes(x = Age_Group, y = Average_SHS)) +
+  geom_point() +
+  facet_wrap(~ SNP) +
+  labs(title = "Yaş ve SHS Arasındaki İlişki (SNP'ye Göre)", x = "Yaş", y = "SHS")
+
+```
+
+```{r}
+library(dplyr)
+
+# Her bir Visit için SHS ve Severity ortalamaları
+average_outcome <- DF %>%
+  group_by(Visit) %>%
+  summarise(Mean_SHS = mean(SHS, na.rm = TRUE),
+            Mean_Severity = mean(Severity, na.rm = TRUE))
+
+print(average_outcome)
+
+```
+
+```{r}
+library(ggplot2)
+
+# SHS için zaman içindeki ortalama değişim
+ggplot(DF, aes(x = Visit, y = SHS)) +
+  geom_line(stat = "summary", fun = "mean") +
+  geom_point(stat = "summary", fun = "mean") +
+  labs(title = "Zaman İçinde SHS Ortalaması", x = "Visit", y = "Ortalama SHS")
+
+```
+
+```{r}
+library(ggplot2)
+
+
+
+
+# SHS için zaman içindeki ortalama değişim
+ggplot(DF, aes(x = Visit, y = SHS, color = Period)) +
+  geom_line(stat = "summary", fun = "mean") +
+  geom_point(stat = "summary", fun = "mean") +
+  labs(title = "Zaman İçinde SHS Ortalaması", x = "Visit", y = "Ortalama SHS")
+
+```
+
+
+```{r}
+# SHS için Boxplot, zaman içindeki varyansı gösterir
+ggplot(DF, aes(x = factor(Visit), y = SHS)) +
+  geom_boxplot() +
+  labs(title = "Zaman İçinde SHS Varyansı", x = "Visit", y = "SHS")
+
+```
+
+
+
+
+```{r}
+#install.packages("corrplot")
+library(corrplot)
+# Visitler arası SHS korelasyonunu görselleştirme
+cor_matrix <- cor(select(DF, SHS, Severity, Visit,Age,SNP))
+corrplot::corrplot(cor_matrix, method = "circle")
+
+```
